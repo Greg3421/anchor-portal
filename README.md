@@ -11,16 +11,23 @@ Mobile-first Progressive Web App. Install on iPhone via Safari → Share → Add
 - Offline / on-device storage (localStorage)
 - Clean dark UI optimized for phone
 
-## How to use
-1. Open the live page (GitHub Pages once enabled)
-2. On iPhone: Safari → Share button → "Add to Home Screen"
-3. Data stays on your device
+## Live
+Once GitHub Pages is enabled: https://greg3421.github.io/anchor-portal/
 
-## Next ideas
-- Export / import JSON
-- Better calendar integration
-- Voice capture for journal
-- Daily digests
-- Sync options
+## How to install on iPhone
+1. Open the site in Safari
+2. Tap the Share button
+3. Scroll and tap "Add to Home Screen"
+4. It will appear like a native app
 
-Built as the starting point for a personal continuity system.
+Data stays on your device for now.
+
+## Next ideas (we will tweak)
+- Export / import JSON backup
+- Better native calendar linking
+- Voice-to-journal
+- Morning / evening digests
+- Multi-device sync options
+- Custom lists & tags
+
+Built as the starting point for a personal continuity / memory support system.
