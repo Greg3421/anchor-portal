@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Anchor — Journal, Tasks & Reminders. Your personal continuity portal." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Anchor</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-dim: #0ea5e9;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --radius: 12px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid var(--surface2);
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+    }
+    .logo span { color: var(--text); font-weight: 500; }
+    .date-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Nav tabs */
+    nav {
+      display: flex;
+      gap: 4px;
+      margin-top: 12px;
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 4px;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 4px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    /* Main content */
+    main {
+      padding: 16px 16px calc(80px + var(--safe-bottom));
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border: 1px solid transparent;
+    }
+    .card:active { border-color: var(--surface2); }
+
+    /* Journal */
+    .journal-entry {
+      cursor: pointer;
+    }
+    .entry-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .entry-date {
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .entry-preview {
+      font-size: 0.95rem;
+      line-height: 1.45;
+      color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state p { margin-top: 8px; font-size: 0.9rem; }
+
+    /* Tasks */
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .task-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid var(--surface2);
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .task-check.done {
+      background: var(--success);
+      border-color: var(--success);
+    }
+    .task-check.done::after {
+      content: "✓";
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .task-body { flex: 1; min-width: 0; }
+    .task-title {
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+    .task-title.done {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .priority {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+    .priority.high { background: rgba(248,113,113,0.2); color: var(--danger); }
+    .priority.med { background: rgba(251,191,36,0.2); color: var(--warning); }
+    .priority.low { background: rgba(74,222,128,0.15); color: var(--success); }
+
+    /* Calendar / Reminders */
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .cal-nav {
+      background: var(--surface);
+      border: none;
+      color: var(--text);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    .cal-title { font-weight: 600; font-size: 1rem; }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+    .cal-day-name {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      padding: 4px 0;
+      font-weight: 600;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      position: relative;
+      background: transparent;
+      border: none;
+      color: var(--text);
+    }
+    .cal-day.other { color: var(--text-muted); opacity: 0.4; }
+    .cal-day.today {
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 700;
+    }
+    .cal-day.selected {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+    .cal-day.has-items::after {
+      content: "";
+      position: absolute;
+      bottom: 4px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .cal-day.today.has-items::after { background: #0f172a; }
+
+    /* FAB */
+    .fab {
+      position: fixed;
+      bottom: calc(20px + var(--safe-bottom));
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      font-size: 1.8rem;
+      font-weight: 300;
+      box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
+      cursor: pointer;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s;
+    }
+    .fab:active { transform: scale(0.94); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal {
+      background: var(--surface);
+      width: 100%;
+      max-width: 640px;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px calc(20px + var(--safe-bottom));
+      max-height: 85dvh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .modal-title { font-size: 1.15rem; font-weight: 700; }
+    .modal-close {
+      background: var(--surface2);
+      border: none;
+      color: var(--text);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    textarea,
+    select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--surface2);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 14px;
+      font-family: inherit;
+    }
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0f172a;
+    }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    .btn-danger {
+      background: rgba(248,113,113,0.15);
+      color: var(--danger);
+    }
+
+    /* Section headers */
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin: 18px 0 8px;
+      font-weight: 600;
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    /* Filter chips */
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .chip {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(90px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      color: var(--text);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: all 0.25s;
+      z-index: 300;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-row">
+      <div>
+        <div class="logo">Anchor <span>Portal</span></div>
+        <div class="date-label" id="todayLabel"></div>
+      </div>
+    </div>
+    <nav>
+      <button class="tab active" data-tab="journal">Journal</button>
+      <button class="tab" data-tab="tasks">Tasks</button>
+      <button class="tab" data-tab="calendar">Calendar</button>
+    </nav>
+  </header>
+
+  <main id="content"></main>
+
+  <button class="fab" id="fab" aria-label="Add new">+</button>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">New</div>
+        <button class="modal-close" id="modalClose">×</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ========== DATA LAYER ==========
+    const STORAGE_KEY = 'anchor_portal_v1';
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return { journal: [], tasks: [], reminders: [] };
+    }
+
+    function saveData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    let data = loadData();
+
+    // ========== HELPERS ==========
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function formatDate(d) {
+      const date = typeof d === 'string' ? new Date(d + 'T12:00:00') : d;
+      return date.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function todayISO() {
+      const d = new Date();
+      return d.toISOString().slice(0, 10);
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2200);
+    }
+
+    // ========== STATE ==========
+    let currentTab = 'journal';
+    let selectedDate = todayISO();
+    let calMonth = new Date();
+    let editingId = null;
+    let taskFilter = 'open'; // open | all | done
+
+    // ========== RENDER ==========
+    function setTodayLabel() {
+      document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('en-CA', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+    }
+
+    function render() {
+      const content = document.getElementById('content');
+      if (currentTab === 'journal') content.innerHTML = renderJournal();
+      else if (currentTab === 'tasks') content.innerHTML = renderTasks();
+      else content.innerHTML = renderCalendar();
+      attachHandlers();
+    }
+
+    // --- Journal ---
+    function renderJournal() {
+      const entries = [...data.journal].sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created);
+      if (entries.length === 0) {
+        return `<div class="empty-state">
+          <div style="font-size:2.5rem">📝</div>
+          <p>No journal entries yet.<br>Tap + to write your first one.</p>
+        </div>`;
+      }
+      return entries.map(e => `
+        <div class="card journal-entry" data-id="${e.id}">
+          <div class="entry-meta">
+            <span class="entry-date">${formatDate(e.date)}</span>
+            <span style="font-size:0.7rem;color:var(--text-muted)">${new Date(e.created).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+          <div class="entry-preview">${escapeHtml(e.text)}</div>
+        </div>
+      `).join('');
+    }
+
+    // --- Tasks ---
+    function renderTasks() {
+      let tasks = [...data.tasks];
+      if (taskFilter === 'open') tasks = tasks.filter(t => !t.done);
+      else if (taskFilter === 'done') tasks = tasks.filter(t => t.done);
+
+      tasks.sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        const pri = { high: 0, med: 1, low: 2 };
+        if ((pri[a.priority] || 1) !== (pri[b.priority] || 1)) return (pri[a.priority] || 1) - (pri[b.priority] || 1);
+        if (a.due && b.due) return a.due.localeCompare(b.due);
+        if (a.due) return -1;
+        if (b.due) return 1;
+        return b.created - a.created;
+      });
+
+      const chips = `
+        <div class="chips">
+          <button class="chip ${taskFilter==='open'?'active':''}" data-filter="open">Open</button>
+          <button class="chip ${taskFilter==='all'?'active':''}" data-filter="all">All</button>
+          <button class="chip ${taskFilter==='done'?'active':''}" data-filter="done">Done</button>
+        </div>`;
+
+      if (tasks.length === 0) {
+        return chips + `<div class="empty-state">
+          <div style="font-size:2.5rem">✅</div>
+          <p>${taskFilter === 'done' ? 'No completed tasks yet.' : 'Nothing on the list.<br>Tap + to add a task.'}</p>
+        </div>`;
+      }
+
+      return chips + tasks.map(t => `
+        <div class="card task-item" data-id="${t.id}">
+          <div class="task-check ${t.done ? 'done' : ''}" data-toggle="${t.id}"></div>
+          <div class="task-body">
+            <div class="task-title ${t.done ? 'done' : ''}">${escapeHtml(t.title)}</div>
+            <div class="task-meta">
+              ${t.priority ? `<span class="priority ${t.priority}">${t.priority}</span>` : ''}
+              ${t.due ? `<span>📅 ${formatDate(t.due)}</span>` : ''}
+              ${t.list ? `<span>#${escapeHtml(t.list)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- Calendar ---
+    function renderCalendar() {
+      const year = calMonth.getFullYear();
+      const month = calMonth.getMonth();
+      const first = new Date(year, month, 1);
+      const last = new Date(year, month + 1, 0);
+      const startDay = first.getDay(); // 0=Sun
+      const daysInMonth = last.getDate();
+
+      const monthName = calMonth.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
+
+      let html = `
+        <div class="cal-header">
+          <button class="cal-nav" id="prevMonth">‹</button>
+          <div class="cal-title">${monthName}</div>
+          <button class="cal-nav" id="nextMonth">›</button>
+        </div>
+        <div class="cal-grid">
+          <div class="cal-day-name">S</div><div class="cal-day-name">M</div><div class="cal-day-name">T</div>
+          <div class="cal-day-name">W</div><div class="cal-day-name">T</div><div class="cal-day-name">F</div>
+          <div class="cal-day-name">S</div>
+      `;
+
+      // Previous month padding
+      const prevLast = new Date(year, month, 0).getDate();
+      for (let i = startDay - 1; i >= 0; i--) {
+        html += `<button class="cal-day other">${prevLast - i}</button>`;
+      }
+
+      const today = todayISO();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const hasItems = data.reminders.some(r => r.date === iso) ||
+                         data.tasks.some(t => t.due === iso) ||
+                         data.journal.some(j => j.date === iso);
+        const classes = ['cal-day'];
+        if (iso === today) classes.push('today');
+        if (iso === selectedDate) classes.push('selected');
+        if (hasItems) classes.push('has-items');
+        html += `<button class="${classes.join(' ')}" data-date="${iso}">${d}</button>`;
+      }
+
+      // Next month padding
+      const totalCells = startDay + daysInMonth;
+      const remaining = (7 - (totalCells % 7)) % 7;
+      for (let i = 1; i <= remaining; i++) {
+        html += `<button class="cal-day other">${i}</button>`;
+      }
+      html += `</div>`;
+
+      // Day detail
+      html += `<div class="section-title">${formatDate(selectedDate)}</div>`;
+
+      const dayReminders = data.reminders.filter(r => r.date === selectedDate);
+      const dayTasks = data.tasks.filter(t => t.due === selectedDate);
+      const dayJournal = data.journal.filter(j => j.date === selectedDate);
+
+      if (dayReminders.length + dayTasks.length + dayJournal.length === 0) {
+        html += `<div class="empty-state" style="padding:24px 10px"><p>Nothing scheduled for this day.<br>Use + to add a reminder or task.</p></div>`;
+      } else {
+        dayReminders.forEach(r => {
+          html += `<div class="card" data-reminder="${r.id}">
+            <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-bottom:4px">🔔 REMINDER ${r.time ? '· ' + r.time : ''}</div>
+            <div>${escapeHtml(r.text)}</div>
+          </div>`;
+        });
+        dayTasks.forEach(t => {
+          html += `<div class="card task-item" data-id="${t.id}">
+            <div class="task-check ${t.done ? 'done' : ''}" data-toggle="${t.id}"></div>
+            <div class="task-body">
+              <div class="task-title ${t.done ? 'done' : ''}">${escapeHtml(t.title)}</div>
+            </div>
+          </div>`;
+        });
+        dayJournal.forEach(j => {
+          html += `<div class="card journal-entry" data-id="${j.id}">
+            <div class="entry-meta"><span class="entry-date">Journal</span></div>
+            <div class="entry-preview">${escapeHtml(j.text)}</div>
+          </div>`;
+        });
+      }
+
+      return html;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ========== HANDLERS ==========
+    function attachHandlers() {
+      // Tabs already handled globally
+      // Journal entries
+      document.querySelectorAll('.journal-entry').forEach(el => {
+        el.addEventListener('click', () => openJournalModal(el.dataset.id));
+      });
+
+      // Task toggles
+      document.querySelectorAll('[data-toggle]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleTask(el.dataset.toggle);
+        });
+      });
+
+      // Task cards click to edit
+      document.querySelectorAll('.task-item').forEach(el => {
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('[data-toggle]')) return;
+          openTaskModal(el.dataset.id);
+        });
+      });
+
+      // Filter chips
+      document.querySelectorAll('[data-filter]').forEach(el => {
+        el.addEventListener('click', () => {
+          taskFilter = el.dataset.filter;
+          render();
+        });
+      });
+
+      // Calendar nav
+      const prev = document.getElementById('prevMonth');
+      const next = document.getElementById('nextMonth');
+      if (prev) prev.addEventListener('click', () => {
+        calMonth.setMonth(calMonth.getMonth() - 1);
+        render();
+      });
+      if (next) next.addEventListener('click', () => {
+        calMonth.setMonth(calMonth.getMonth() + 1);
+        render();
+      });
+
+      // Day select
+      document.querySelectorAll('.cal-day[data-date]').forEach(el => {
+        el.addEventListener('click', () => {
+          selectedDate = el.dataset.date;
+          render();
+        });
+      });
+
+      // Reminder cards
+      document.querySelectorAll('[data-reminder]').forEach(el => {
+        el.addEventListener('click', () => openReminderModal(el.dataset.reminder));
+      });
+    }
+
+    // ========== MODALS ==========
+    function openModal(title, bodyHtml) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalBody').innerHTML = bodyHtml;
+      document.getElementById('modalOverlay').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('open');
+      editingId = null;
+    }
+
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modalOverlay')) closeModal();
+    });
+
+    // Journal modal
+    function openJournalModal(id = null) {
+      editingId = id;
+      const entry = id ? data.journal.find(j => j.id === id) : null;
+      const title = entry ? 'Edit Entry' : 'New Journal Entry';
+      openModal(title, `
+        <label>Date</label>
+        <input type="date" id="jDate" value="${entry ? entry.date : todayISO()}" />
+        <label>What's on your mind?</label>
+        <textarea id="jText" placeholder="Write freely...">${entry ? escapeHtml(entry.text) : ''}</textarea>
+        <div class="btn-row">
+          ${entry ? '<button class="btn btn-danger" id="deleteBtn">Delete</button>' : ''}
+          <button class="btn btn-primary" id="saveBtn">Save</button>
+        </div>
+      `);
+      document.getElementById('saveBtn').onclick = saveJournal;
+      if (entry) document.getElementById('deleteBtn').onclick = () => deleteJournal(id);
+      setTimeout(() => document.getElementById('jText').focus(), 100);
+    }
+
+    function saveJournal() {
+      const text = document.getElementById('jText').value.trim();
+      const date = document.getElementById('jDate').value;
+      if (!text) { toast('Write something first'); return; }
+      if (editingId) {
+        const e = data.journal.find(j => j.id === editingId);
+        if (e) { e.text = text; e.date = date; e.updated = Date.now(); }
+      } else {
+        data.journal.push({ id: uid(), text, date, created: Date.now(), updated: Date.now() });
+      }
+      saveData(data);
+      closeModal();
+      render();
+      toast('Saved');
+    }
+
+    function deleteJournal(id) {
+      data.journal = data.journal.filter(j => j.id !== id);
+      saveData(data);
+      closeModal();
+      render();
+      toast('Deleted');
+    }
+
+    // Task modal
+    function openTaskModal(id = null) {
+      editingId = id;
+      const task = id ? data.tasks.find(t => t.id === id) : null;
+      const title = task ? 'Edit Task' : 'New Task';
+      openModal(title, `
+        <label>Task</label>
+        <input type="text" id="tTitle" value="${task ? escapeHtml(task.title) : ''}" placeholder="What needs doing?" />
+        <label>Due date (optional)</label>
+        <input type="date" id="tDue" value="${task && task.due ? task.due : ''}" />
+        <label>Priority</label>
+        <select id="tPriority">
+          <option value="low" ${task && task.priority==='low'?'selected':''}>Low</option>
+          <option value="med" ${!task || task.priority==='med'?'selected':''}>Medium</option>
+          <option value="high" ${task && task.priority==='high'?'selected':''}>High</option>
+        </select>
+        <label>List / Project (optional)</label>
+        <input type="text" id="tList" value="${task && task.list ? escapeHtml(task.list) : ''}" placeholder="e.g. Home, Work, Sobriety" />
+        <div class="btn-row">
+          ${task ? '<button class="btn btn-danger" id="deleteBtn">Delete</button>' : ''}
+          <button class="btn btn-primary" id="saveBtn">Save</button>
+        </div>
+      `);
+      document.getElementById('saveBtn').onclick = saveTask;
+      if (task) document.getElementById('deleteBtn').onclick = () => deleteTask(id);
+      setTimeout(() => document.getElementById('tTitle').focus(), 100);
+    }
+
+    function saveTask() {
+      const title = document.getElementById('tTitle').value.trim();
+      if (!title) { toast('Add a title'); return; }
+      const due = document.getElementById('tDue').value || null;
+      const priority = document.getElementById('tPriority').value;
+      const list = document.getElementById('tList').value.trim() || null;
+      if (editingId) {
+        const t = data.tasks.find(x => x.id === editingId);
+        if (t) { t.title = title; t.due = due; t.priority = priority; t.list = list; t.updated = Date.now(); }
+      } else {
+        data.tasks.push({
+          id: uid(), title, due, priority, list, done: false, created: Date.now(), updated: Date.now()
+        });
+      }
+      saveData(data);
+      closeModal();
+      render();
+      toast('Saved');
+    }
+
+    function deleteTask(id) {
+      data.tasks = data.tasks.filter(t => t.id !== id);
+      saveData(data);
+      closeModal();
+      render();
+      toast('Deleted');
+    }
+
+    function toggleTask(id) {
+      const t = data.tasks.find(x => x.id === id);
+      if (t) {
+        t.done = !t.done;
+        t.updated = Date.now();
+        saveData(data);
+        render();
+      }
+    }
+
+    // Reminder modal
+    function openReminderModal(id = null) {
+      editingId = id;
+      const rem = id ? data.reminders.find(r => r.id === id) : null;
+      const title = rem ? 'Edit Reminder' : 'New Reminder';
+      openModal(title, `
+        <label>Reminder</label>
+        <input type="text" id="rText" value="${rem ? escapeHtml(rem.text) : ''}" placeholder="What to remember?" />
+        <label>Date</label>
+        <input type="date" id="rDate" value="${rem ? rem.date : selectedDate}" />
+        <label>Time (optional)</label>
+        <input type="time" id="rTime" value="${rem && rem.time ? rem.time : ''}" />
+        <div class="btn-row">
+          ${rem ? '<button class="btn btn-danger" id="deleteBtn">Delete</button>' : ''}
+          <button class="btn btn-primary" id="saveBtn">Save</button>
+        </div>
+      `);
+      document.getElementById('saveBtn').onclick = saveReminder;
+      if (rem) document.getElementById('deleteBtn').onclick = () => deleteReminder(id);
+      setTimeout(() => document.getElementById('rText').focus(), 100);
+    }
+
+    function saveReminder() {
+      const text = document.getElementById('rText').value.trim();
+      const date = document.getElementById('rDate').value;
+      const time = document.getElementById('rTime').value || null;
+      if (!text) { toast('Add some text'); return; }
+      if (editingId) {
+        const r = data.reminders.find(x => x.id === editingId);
+        if (r) { r.text = text; r.date = date; r.time = time; r.updated = Date.now(); }
+      } else {
+        data.reminders.push({ id: uid(), text, date, time, created: Date.now(), updated: Date.now() });
+      }
+      saveData(data);
+      closeModal();
+      render();
+      toast('Saved');
+    }
+
+    function deleteReminder(id) {
+      data.reminders = data.reminders.filter(r => r.id !== id);
+      saveData(data);
+      closeModal();
+      render();
+      toast('Deleted');
+    }
+
+    // ========== FAB ==========
+    document.getElementById('fab').addEventListener('click', () => {
+      if (currentTab === 'journal') openJournalModal();
+      else if (currentTab === 'tasks') openTaskModal();
+      else openReminderModal();
+    });
+
+    // ========== TABS ==========
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab;
+        render();
+      });
+    });
+
+    // ========== INIT ==========
+    setTodayLabel();
+    render();
+
+    // Service worker for PWA (basic)
+    if ('serviceWorker' in navigator) {
+      // inline simple offline support later if needed
+    }
+  </script>
+</body>
+</html>
